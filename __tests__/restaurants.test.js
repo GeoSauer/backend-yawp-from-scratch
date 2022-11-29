@@ -4,19 +4,19 @@ const request = require('supertest');
 const app = require('../lib/app');
 const UserService = require('../lib/services/UserService');
 
-const registerAndLogin = async (userProps = {}) => {
-  const password = userProps.password ?? mockUser.password;
+const mockUser = {
+  firstName: 'Mock',
+  lastName: 'User',
+  email: 'mock@user.com',
+  password: '123123',
+};
 
-  // Create an "agent" that gives us the ability
-  // to store cookies between requests in a test
+const registerAndLogin = async () => {
   const agent = request.agent(app);
-
-  // Create a user to sign in with
-  const user = await UserService.create({ ...mockUser, ...userProps });
-
-  // ...then sign in
-  const { email } = user;
-  await agent.post('/api/v1/users/sessions').send({ email, password });
+  const user = await UserService.create(mockUser);
+  await agent
+    .post('/api/v1/users/sessions')
+    .send({ email: mockUser.email, password: mockUser.password });
   return [agent, user];
 };
 
@@ -75,23 +75,39 @@ describe('restaurant routes', () => {
           Object {
             "detail": "Best restaurant ever!",
             "id": "1",
-            "start": 5,
+            "stars": 5,
             "userId": "1",
           },
           Object {
             "detail": "Terrible service :(",
             "id": "2",
-            "start": 1,
+            "stars": 1,
             "userId": "2",
           },
           Object {
             "detail": "It was fine.",
             "id": "3",
-            "start": 4,
+            "stars": 4,
             "userId": "3",
           },
         ],
         "website": "http://www.PipsOriginal.com",
+      }
+    `);
+  });
+
+  test('POST /api/v1/restaurants/:restId/reviews allows authenticated users to create a new review', async () => {
+    const [agent] = await registerAndLogin();
+    const resp = await agent
+      .post('/api/v1/restaurants/1/reviews')
+      .send({ stars: 5, detail: 'It was ok' });
+    expect(resp.status).toBe(200);
+    expect(resp.body).toMatchInlineSnapshot(`
+      Object {
+        "detail": "It was ok",
+        "id": "4",
+        "stars": 5,
+        "userId": "4",
       }
     `);
   });
