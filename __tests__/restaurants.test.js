@@ -20,7 +20,7 @@ const registerAndLogin = async () => {
   return [agent, user];
 };
 
-describe.skip('restaurant routes', () => {
+describe('restaurant routes', () => {
   beforeEach(() => {
     return setup(pool);
   });
